@@ -1,4 +1,5 @@
-import numpy as np
+
+import time
 import plotly.graph_objs as go
 import plotly.offline as pyo
 from scipy import signal
@@ -53,5 +54,7 @@ fig.update_layout(legend=dict(
     borderwidth=2
 ))
 
+# Get the current Unix timestamp
+unix_timestamp = int(time.time())
 # Save the figure as an HTML file
-pyo.plot(fig, filename='inductor.html', auto_open=True)
+pyo.plot(fig, filename = str(unix_timestamp)+'inductor.html', auto_open=False)
