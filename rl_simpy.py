@@ -47,11 +47,13 @@ class RL_GUI:
 
 # create the simulation environment and GUI
 sim_env = simpy.Environment()
+sim_env.timestep = 0.1
 sim_env.L = 10e-3
 sim_env.R = 1e3
-sim_env.input_voltage = 5.0
+t = np.arange(0, 1, sim_env.timestep)
+sim_env.input_voltage = 55
 sim_env.output = []
-sim_env.timestep = 0.1
+
 
 gui = RL_GUI(sim_env)
 
