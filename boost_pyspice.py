@@ -1,66 +1,88 @@
-import threading
-import time
-import numpy as np
-import matplotlib.pyplot as plt
-import ltspice
+import simpy
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
+# Open the HTML file in the default web browser
+import plotly.io as pio
+class BoostConverter:
+    def __init__(self, env):
+        self.env = env
+        self.input = simpy.Container(env, init=3.3)
+        self.output = simpy.Container(env, init=12)
+        self.inductor = simpy.Container(env, init=0)
+        self.capacitor = simpy.Container(env, init=0)
+        self.switch = False
+        self.duty_cycle = 0.5
+        self.period = 1/1e3
+        self.env.process(self.boost())
 
-from matplotlib.animation import FuncAnimation
-Vin = 3.3 # V
-# Define simulation function
-def simulate_boost_converter():
-    # Define simulation parameters
-    
-    Vout = 12.0 # V
-    L = 1e-6 # H
-    C = 22e-6 # F
-    R = 10 # Ohm
-    fsw = 100e3 # Hz
-    D = (Vout / Vin) / (1 + Vout / Vin) # duty cycle
+    def boost(self):
+        while True:
+            yield self.env.timeout(self.period)
+            self.switch = not self.switch
+            if self.switch:
+                on_time = self.duty_cycle*self.period
+                off_time = (1-self.duty_cycle)*self.period
+                yield self.env.timeout(on_time)
+                yield self.input.get(1)
+                self.inductor.put(1)
+                yield self.env.timeout(off_time)
+                self.capacitor.put(self.duty_cycle)
+                self.inductor.get(1)
+            else:
+                yield self.env.timeout(self.period*self.duty_cycle)
+                yield self.capacitor.get(self.duty_cycle)
+                self.output.put(self.duty_cycle*self.input.level/(1-self.duty_cycle))
 
-    # Load the LTSpice simulation file
-    lts = ltspice.Ltspice("/home/hunter/Documents/Workspace/Python_code/pypow/boost_converter.asc")
-    lts.set_parameters(L=L, C=C, R=R, fsw=fsw, D=D)
+# Simulation setup
+env = simpy.Environment()
+boost_converter = BoostConverter(env)
 
-    # Run the simulation
-    lts.run()
+# Data storage
+input_data = []
+output_data = []
+inductor_data = []
+capacitor_data = []
+power_data = []
 
-    # Extract simulation results
-    t = lts.time
-    Vout_sim = lts.get_data("V(out)")
-    Iind_sim = lts.get_data("I(L1)")
-    Pout_sim = Vout_sim * Iind_sim
+# Simulation loop
+for i in range(10000):
+    env.run(until=(i+1)*1e-6)
+    input_data.append((i*1e-6, boost_converter.input.level))
+    output_data.append((i*1e-6, boost_converter.output.level))
+    inductor_data.append((i*1e-6, boost_converter.inductor.level))
+    capacitor_data.append((i*1e-6, boost_converter.capacitor.level))
+    power_data.append((i*1e-6, boost_converter.output.level*boost_converter.output.level/12))
 
-    return t, Vout_sim, Iind_sim, Pout_sim
+fig_list = []
+# Generate plots
+input_fig = go.Figure()
+input_fig.add_trace(go.Scatter(x=[i[0] for i in input_data], y=[i[1] for i in input_data], name="Input Voltage"))
+input_fig.update_layout(title="Input Voltage")
+fig_list.append(input_fig)
 
-# Define function to update plots
-def update_plots(i):
-    # Extract simulation results
-    t, Vout_sim, Iind_sim, Pout_sim = simulate_boost_converter()
+output_fig = go.Figure()
+output_fig.add_trace(go.Scatter(x=[i[0] for i in output_data], y=[i[1] for i in output_data], name="Output Voltage"))
+output_fig.update_layout(title="Output Voltage")
+fig_list.append(output_fig)
 
-    # Update the time-domain plot
-    ax1.clear()
-    ax1.plot(t, Vout_sim, label="Vout")
-    ax1.plot(t, Iind_sim, label="Iind")
-    ax1.plot(t, Pout_sim, label="Pout")
-    ax1.set_xlabel("Time (s)")
-    ax1.set_ylabel("Voltage (V) / Current (A) / Power (W)")
-    ax1.legend()
+inductor_fig = go.Figure()
+inductor_fig.add_trace(go.Scatter(x=[i[0] for i in inductor_data], y=[i[1] for i in inductor_data], name="Inductor Current"))
+inductor_fig.update_layout(title="Inductor Current")
+fig_list.append(inductor_fig)
 
-    # Update the switching signal plot
-    ax2.clear()
-    ax2.plot(t, Vout_sim > (Vin / 2), label="Switching Signal")
-    ax2.set_xlabel("Time (s)")
-    ax2.set_ylabel("Switching Signal")
-    ax2.legend()
+capacitor_fig = go.Figure()
+capacitor_fig.add_trace(go.Scatter(x=[i[0] for i in capacitor_data], y=[i[1] for i in capacitor_data], name="Capacitor Voltage"))
+capacitor_fig.update_layout(title="Capacitor Voltage")
+fig_list.append(capacitor_fig)
 
-# Set up the subplots
-fig, (ax1, ax2) = plt.subplots(2, 1)
+power_fig = go.Figure()
+power_fig.add_trace(go.Scatter(x=[i[0] for i in power_data], y=[i[1] for i in power_data], name="Output Power"))
+power_fig.update_layout(title="Output Power")
+fig_list.append(power_fig)
 
-# Set up the animation
-ani = FuncAnimation(fig, update_plots, interval=10)
+# Write the figures to an HTML file
+with open('figures.html', 'w') as f:
+    f.write(pio.to_html(fig_list, full_html=False))
 
-# Run the simulation and animation in separate threads
-sim_thread = threading.Thread(target=simulate_boost_converter)
-sim_thread.start()
 
-plt.show()
+
