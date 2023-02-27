@@ -1,7 +1,8 @@
-from matplotlib.animation import FuncAnimation
+
 import simpy
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 # define the RL circuit simulation function
 def rl_circuit(env, output, timestep):
@@ -15,7 +16,7 @@ def rl_circuit(env, output, timestep):
         current += ((env.input_voltage - voltage) / env.L - self_resistance - self_inductance) * timestep
         output.append(current * env.R)
         yield env.timeout(timestep)
-
+        
 # define the GUI class
 class RL_GUI:
     def __init__(self, sim_env):
@@ -53,10 +54,7 @@ sim_env.R = 1e3
 t = np.arange(0, 1, sim_env.timestep)
 sim_env.input_voltage = 55
 sim_env.output = []
-
-
 gui = RL_GUI(sim_env)
-
 # start the simulation and animation
 sim_env.process(rl_circuit(sim_env, sim_env.output, sim_env.timestep))
 gui.animate()
