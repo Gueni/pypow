@@ -53,7 +53,7 @@ sim_env.L = 10e-3
 sim_env.R = 1e3
 t = np.arange(0, 1, sim_env.timestep)
 sim_env.input_voltage = 55
-sim_env.output = []
+sim_env.output = [1,2.5,3.3,5,6,6.2,10]
 gui = RL_GUI(sim_env)
 # start the simulation and animation
 sim_env.process(rl_circuit(sim_env, sim_env.output, sim_env.timestep))
