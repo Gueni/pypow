@@ -15,8 +15,8 @@ dt = 1e-2  # Time step
 n = int((tf - t0) / dt) + 1  # Number of time steps
 
 # Initial conditions
-V0 = 0  # Initial voltage across capacitor
-I0 = 0  # Initial current through resistor
+V0 = 0.5  # Initial voltage across capacitor
+I0 = 0.5  # Initial current through resistor
 x0 = np.array([V0, I0])  # Initial state vector
 c=0
 # Define the derivative function
@@ -63,16 +63,17 @@ def animate(i):
 x_plot = np.zeros((n, 2))
 x_plot[0] = x0
 
-# Set up the queue and process for the simulation
-q = Queue()
-p = Process(target=calculate, args=(q,))
-p.start()
+if __name__ == "__main__":
+    # Set up the queue and process for the simulation
+    q = Queue()
+    p = Process(target=calculate, args=(q,))
+    p.start()
 
-# Set up the animation
-ani = FuncAnimation(fig, animate, frames=n-1, blit=True)
+    # Set up the animation
+    ani = FuncAnimation(fig, animate, frames=n-1, blit=True)
 
-# Start the simulation and animation
-plt.show()
+    # Start the simulation and animation
+    plt.show()
 
-# Join the simulation process
-p.join()
+    # Join the simulation process
+    p.join()
