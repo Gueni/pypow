@@ -22,8 +22,8 @@ dt = 1e-6  # Time step
 n = int((tf - t0) / dt) + 1  # Number of time steps
 
 # Initial conditions
-IL0 = 0  # Initial inductor current
-VL0 = 48  # Initial voltage across inductor
+IL0 = 0.001# Initial inductor current
+VL0 = 12.5  # Initial voltage across inductor
 VL1 = D * VL0  # Voltage across inductor during on-time
 VL2 = (1 - D) * VL0  # Voltage across inductor during off-time
 VC0 = 0  # Initial voltage across capacitor
