@@ -33,7 +33,6 @@ def f(t, x, u):
     dtheta_dt = omega    # position rate of change
     return dtheta_dt, domega_dt, di_dt
 
-# Arrays to store the state variables and control inputs
 t_array = np.arange(t0, tf, dt)
 theta_array = np.zeros_like(t_array)
 omega_array = np.zeros_like(t_array)
